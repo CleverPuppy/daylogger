@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>DayLogger</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.staticfile.org/axios/0.18.0/axios.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- 可选的 Bootstrap 主题文件（一般不用引入） -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css"
+        integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"
+        integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+        crossorigin="anonymous"></script>
+</head>
+
+<body onload="load()">
+    <div class="container">
+        <div class="jumbotron">
+            <h1>DayLogger</h1>
+            <p>...</p>
+            <p><a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a></p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div id="todo">
+                    <h2>TODO
+                        <button class="btn btn-default" v-on:click="showAddTodo = true">Add A todo</button>
+                    </h2>
+                    <div>
+                        <template v-if='showAddTodo'>
+                            <form>
+                                <div class="form-group">
+                                    <h3>Add a todo</h3>
+                                    <label>TODO CONTENT</label>
+                                    <input class="form-control" v-model='newTodoText' placeholder="Input new TODO">
+                                </div>
+                                <div class="btn-group">
+                                    <button class="btn btn-default" @click="showAddTodo = false">Cancel</button>
+                                    <button class="btn btn-primary" @click='add'>Add</button>
+                                </div>
+                            </form>
+                        </template>
+                    </div>
+                    {% raw %}
+                    <div class="todolist">
+                        <div class="todoitem" v-for="item in todo_list">
+                            <div class="form-group">
+                                <input class="form-control" v-model="item.content">
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-default" @click='startwork(item.pk)'>StartTomatoClock</button>
+                                <button class="btn btn-default" @click='updatetodo(item)'>Update</button>
+                                <button class="btn btn-danger" @click='deletetodo(item)'>Delete</button>
+                            </div>
+                            </p>
+                        </div>
+                    </div>
+                    {% endraw %}
+                </div>
+            </div>
+            <div class="col-md-4">
+                {% raw %}
+                <div id='tomatoclock'>
+                    <h3>TOMATO CLOCK</h3>
+                    <p>Current TODO:</p>
+                    <p> {{ current_todo }}<span>{{ current_work_time }} / {{ work_time }}</span></p>
+                    <div class="progress">
+                        <div id="work-progress-bar" class="progress-bar progress-bar-success" role="progressbar"
+                            >
+                        </div>
+                    </div>
+                    <p>Break Time <span>{{ current_break_time }} / {{ break_time }}</span></p>
+                    <div class="progress">
+                        <div id="break-progress-bar" class="progress-bar progress-bar-success" role="progressbar" 
+                        style="width: 0%;">
+                        </div>
+                    </div>
+                </div>
+                {% endraw %}
+            </div>
+            <div class="col-md-2">
+            </div>
+        </div>
+
+        <div class="row">
+            {% raw %}
+            <div id="todayevent">
+                <h2>TODAY's Event</h2>
+                <div v-for="item in event_list">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <span class="badge">
+                                {{ item.st }} - {{ item.et }}
+                            </span>
+                            {{ item.ct }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            {% endraw %}
+        </div>
+    </div>
+    </div>
+
+    <script>
+        var todov = new Vue({
+            el: '#todo',
+            data: {
+                todo_list: null,
+                showAddTodo: false,
+                newTodoText: '',
+            },
+            methods: {
+                add: function () {
+                    axios
+                        .post('/addtodo', {
+                            'content': this.newTodoText
+                        })
+                        .then(function (response) {
+                            _pk = response.data['pk'];
+                            todov.$set(todov.todo_list, _pk, { 'pk': _pk, 'content': todov.newTodoText });
+                            todov.newTodoText = '';
+                            todov.showAddTodo = false;
+                            console.log(response);
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        })
+                },
+                gettodo: function () {
+                    axios.get('/gettodo')
+                        .then(function (response) {
+                            todov.todo_list = response.data
+                            console.log(response);
+                        })
+                        .catch(function (error) {
+                            console.log(error)
+                        })
+                },
+                updatetodo: function (item) {
+                    var _pk = item.pk;
+                    var _content = item.content;
+                    axios.post('/updatetodo', {
+                        'pk': _pk,
+                        'content': _content
+                    })
+                        .then(function (response) {
+                            console.log(response);
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                            item.content = 'change failed!';
+                        })
+                },
+                deletetodo: function (item) {
+                    var _pk = item.pk;
+                    axios.post('/deletetodo', {
+                        'pk': _pk
+                    })
+                        .then(function (response) {
+                            console.log(response);
+                            //delete from todolist
+                            todov.$delete(todov.todo_list, item.pk);
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        })
+                },
+                startwork: function(pk){
+                    tomatoclockv.current_todo = this.todo_list[pk]['content'];
+                    tomatoclockv.current_todo_pk = pk;
+                    tomatoclockv.startwork();
+                }
+            }
+        });
+        var tomatoclockv = new Vue({
+            el: '#tomatoclock',
+            data: {
+                current_todo_pk : -1,
+                current_todo: "",
+                work_time: 45,
+                break_time: 15,
+                current_work_time: 0,
+                current_break_time: 0,
+                time_lock: true,
+                timer: 0
+            },
+            methods: {
+                startwork: function () {
+                    if (this.time_lock == true) {
+                        this.time_lock = false;
+                        this.timer = setInterval(function () {
+                            tomatoclockv.current_work_time += 1;
+                            console.log('passed 1min');
+                        }, 60000)
+                    } else {
+                        return false;
+                    }
+
+                },
+                cancelwork: function () {
+                    clearInterval(this.timer);
+                    tomatoclockv.current_work_time = 0;
+                    tomatoclockv.time_lock = true;
+                    tomatoclockv.current_todo_pk = -1;
+                    tomatoclockv.current_todo_content = '';
+                    return true;
+                },
+                startbreak:function(){
+                    if(this.time_lock == true){
+                        this.time_lock = false;
+                        this.timer = setInterval(function(){
+                            tomatoclockv.current_break_time +=1;
+                        }, 60000)
+                    }else{
+                        return false;
+                    }
+                },
+                cancelbreak:function(){
+                    clearInterval(this.timer);
+                    tomatoclockv.current_break_time = 0;
+                    tomatoclockv.time_lock = true;
+                    // tomatoclockv.current_todo_pk = -1;
+                    // tomatoclockv.current_todo_content = '';
+                },
+                postevent:function(content,timelapse,pk){
+                    axios.post('/tomato',{
+                        'content':content,
+                        'timelapse':timelapse,
+                        'pk':pk
+                    })
+                    .then(function(response){
+                        console.log(response);
+                    })
+                    .catch(function(error){
+                        console.log(error);
+                    })
+                }
+            },
+            watch: {
+                current_work_time: function (val, oldval) {
+                    if(val > this.work_time){
+                        // post event
+                        this.postevent(this.current_todo,this.work_time,this.current_todo_pk);
+                        this.cancelwork();
+                        this.startbreak();                       
+                    }
+                    var v = 'width:' + Math.round((val / this.work_time) * 100) + '%'
+                    document.getElementById('work-progress-bar').setAttribute('style', v);
+                },
+                current_break_time: function(val, oldval){
+                    if(val > this.break_time){
+                        // post event
+                        this.postevent('BREAK',this.break_time,-1);
+                        this.cancelbreak();
+                    }
+                    var v = 'width:' + Math.round((val/ this.break_time) * 100) + '%';
+                    document.getElementById('break-progress-bar').setAttribute('style',v); 
+                }
+            }
+        });
+        var todayevent = new Vue({
+            el:'#todayevent',
+            data:{
+                event_list:[],
+                total_work_time:0,
+                total_break_time:0,
+            },
+            methods:{
+                getTodayEvent:function(){
+                    axios.get('/event?day=' + Date.now())
+                    .then(function(response){
+                        todayevent.event_list = response.data;
+                        console.log(response);
+                    })
+                    .catch(function(error){
+                        console.log(response);
+                    })
+                },
+                localAddEvent:function(ct){
+                    
+                }
+            }
+        });
+
+        function load(){
+            todov.gettodo();
+            todayevent.getTodayEvent();
+        }
+    </script>
+</body>
+
+</html>
